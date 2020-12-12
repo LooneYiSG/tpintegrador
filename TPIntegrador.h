@@ -16,7 +16,7 @@ void printfn(const char *palabra){
 	for(int i=0;i<=strlen(H);i++){
 		if(H[i]!='\0'){
 			printf("%c",H[i]);
-			Sleep(15);
+			Sleep(3);
 		}
 	}
 }
