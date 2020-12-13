@@ -31,6 +31,7 @@ struct Turno{
 	int mat_vet,dni_duenio;
 	char det_at[380];
 	fecha fec;
+	bool borrado;
 }turn,turn_aux;
 
 bool verificacion(FILE *Veterinarios, FILE *Usuarios,palabra usuario,palabra password,int band){
@@ -46,33 +47,66 @@ bool verificacion(FILE *Veterinarios, FILE *Usuarios,palabra usuario,palabra pas
 					fread(&vet,sizeof(vet),1,Veterinarios);
 					do{
 						if(strcmp(user.ayn,vet.ayn)==0){
+							printf("\nHas iniciado sesion exitosamente!\n\n");
+							system("pause");
 							resp = true;
 							vetAct = vet;
 							break;
 						}else{
+							printf("\nEste modulo es unicamente para Veterinarios!\n\n");
+							system("pause");
 							resp = false;
+							break;
 						}
 						fread(&vet,sizeof(vet),1,Veterinarios);
 					}while(!feof(Veterinarios));
 					break;
 				}else{
-					resp = true;
-					break;
+					fread(&vet,sizeof(vet),1,Veterinarios);
+					do{
+						if(strcmp(user.ayn,vet.ayn)==0){
+							printf("\nEste modulo es unicamente para Asistentes!\n\n");
+							system("pause");
+							resp = false;
+							break;
+						}
+						fread(&vet,sizeof(vet),1,Veterinarios);
+						if(feof(Veterinarios) and strcmp(user.ayn,vet.ayn)!=0){
+							printf("\nHas iniciado sesion exitosamente!\n\n");
+							system("pause");
+							resp = true;
+							break;
+						}
+					}while(!feof(Veterinarios));
 				}
+				break;
 			}else{
 				resp = false;
-				printf("Contraseña Incorrecta\n");
+				/*if(feof(Usuarios)){
+					printf("Contraseña Incorrecta\n");
+					system("pause");
+					break;
+				}*/
 			}
 		}else{
 			resp = false;
-			printf("Usuario Incorrecto \n",usuario,user.user);
+			/*if(feof(Usuarios)){
+				printf("Usuario Incorrecto \n",usuario,user.user);
+				system("pause");
+				break;
+			}*/
 		}
 		fread(&user,sizeof(user),1,Usuarios);
+		if(resp==false and feof(Usuarios)){
+			printf("Usuario o Contraseña Incorrectos\n");
+			system("pause");
+		}
 	}while(!feof(Usuarios));
 	return resp;
 }
 
 void login(FILE *Veterinarios, FILE *Usuarios,bool &hab,int band){
+	system("cls");
 	Veterinarios = fopen("Veterinarios.dat","r+b");
 	Usuarios = fopen("Usuarios.dat","r+b");						
 	palabra usuario,password;
@@ -84,8 +118,8 @@ void login(FILE *Veterinarios, FILE *Usuarios,bool &hab,int band){
 	if(verificacion(Veterinarios,Usuarios,usuario,password,band)){
 		hab=true;
 	}else{
-		printf("Usuario o Contraseña Incorrectos\n");
-		system("pause");
+		/*printf("Usuario o Contraseña Incorrectos\n");
+		system("pause");*/
 	}
 	fclose(Veterinarios);
 	fclose(Usuarios);
@@ -186,14 +220,72 @@ bool condUser(FILE *Usuario,palabra usuario){
 	return cpl;
 }
 
-void turnRegister(FILE *Turnos){
+bool verMat(int matricula,FILE *Veterinarios){
+	rewind(Veterinarios);
+	bool res=false;
+	fread(&vet,sizeof(vet),1,Veterinarios);
+	do{
+		if(vet.matricula==matricula){
+			res=true;
+			break;
+		}
+		fread(&vet,sizeof(vet),1,Veterinarios);
+	}while(!feof(Veterinarios));
+	return res;
+}
+
+bool verFec(int dia, int mes, int anio,int B){
+	time_t now = time(0);
+	tm *time = localtime(&now);
+	bool res=false;
+	if(B==1){
+		if((dia>=time->tm_mday)and(mes>=time->tm_mon+1)and(anio>=1900+time->tm_year)){
+			res=true;
+		}
+	}else{
+		if((dia<=time->tm_mday)and(mes<=time->tm_mon+1)and(anio<=1900+time->tm_year)){
+			res=true;
+		}	
+	}
+	
+	return res;
+}
+
+bool verMascota(FILE *Mascotas,int dni){
+	rewind(Mascotas);
+	bool res=false;
+	fread(&pet,sizeof(pet),1,Mascotas);
+	do{
+		if(pet.dni_duenio==dni){
+			res=true;
+			break;
+		}
+		fread(&pet,sizeof(pet),1,Mascotas);
+	}while(!feof(Mascotas));
+	return res;
+}
+
+void clearTurn(){
+	for(int i=0;i<380;i++){
+		turn.det_at[i]='\0';
+	}
+	turn.borrado=false;
+}
+
+void turnRegister(FILE *Turnos, FILE *Veterinarios,FILE *Mascotas){
 	system("cls");
 	char o;
+	clearTurn();
 	printf("Registro de Turno\n");
 	printf("=======================\n");
 	_flushall();
 	printf("Matricula de Veterinario: ");
 	scanf("%d",&turn.mat_vet);
+	while(!verMat(turn.mat_vet,Veterinarios)){
+		printf("La matricula ingresada es inexistente por favor ingrese nuevamente\n");
+		printf("Matricula de Veterinario: ");
+		scanf("%d",&turn.mat_vet);	
+	}
 	printf("\tFecha: \n============================\n");
 	printf("Dia: ");
 	scanf("%d",&turn.fec.dia);
@@ -201,12 +293,27 @@ void turnRegister(FILE *Turnos){
 	scanf("%d",&turn.fec.mes);
 	printf("Año: ");
 	scanf("%d",&turn.fec.anio);
+	while(!verFec(turn.fec.dia,turn.fec.mes,turn.fec.anio,1)){
+		printf("Ingrese correctamente la fecha\n");
+		printf("\tFecha: \n============================\n");
+		printf("Dia: ");
+		scanf("%d",&turn.fec.dia);
+		printf("Mes: ");
+		scanf("%d",&turn.fec.mes);
+		printf("Año: ");
+		scanf("%d",&turn.fec.anio);
+	}
 	printf("DNI del Dueño: ");
 	scanf("%d",&turn.dni_duenio);
+	while(!verMascota(Mascotas,turn.dni_duenio)){
+		printf("No hay mascota registrada con este dueño!\n");
+		printf("DNI del Dueño: ");
+		scanf("%d",&turn.dni_duenio);
+	}
 	_flushall();
-	printf("Detalle de Atencion: ");
+	//printf("Detalle de Atencion: ");
 	strcpy(turn.det_at,"\0");
-	gets(turn.det_at);
+	//gets(turn.det_at);
 	system("cls");
 	printf("Turno a registrar\n");
 	printf("=======================\n");
@@ -248,6 +355,16 @@ void petRegister(FILE *Mascotas){
 	scanf("%d",&pet.fec_nac.mes);
 	printf("Año: ");
 	scanf("%d",&pet.fec_nac.anio);
+	while(!verFec(pet.fec_nac.dia,pet.fec_nac.mes,pet.fec_nac.anio,0)){
+		printf("Ingrese correctamente la fecha de nacimiento\n");
+		printf("\tFecha de Nacimiento\n=====================================\n");
+		printf("Dia: ");
+		scanf("%d",&pet.fec_nac.dia);
+		printf("Mes: ");
+		scanf("%d",&pet.fec_nac.mes);
+		printf("Año: ");
+		scanf("%d",&pet.fec_nac.anio);
+	}
 	printf("Peso: ");
 	scanf("%f",&pet.peso);
 	_flushall();
@@ -401,35 +518,40 @@ void openFile(FILE *Archivo, const palabra nombre){
 	fclose(Archivo);
 }
 
-void atencionPVet(FILE *Turnos){
-	int i=0,vec[50];
-	fread(&turn,sizeof(turn),1,Turnos);
+void atencionPVet(FILE *Turnos, FILE *Veterinarios){
+	int mat,i=0;
+	char vetn[60];
+	system("cls");
+	printf("Ingrese la matricula del veterinario a buscar: ");
+	scanf("%d",&mat);
+	_flushall();
+	system("cls");
+	fread(&vet,sizeof(vet),1,Veterinarios);
 	do{
-		for(int ii=0;ii<=i;ii++){
-			if(vec[ii]==turn.mat_vet)break;
-			if(vec[ii]!=turn.mat_vet and ii==i){
-				vec[ii]=turn.mat_vet;
-				i++;
-				break;
-			}
+		if(vet.matricula==mat){
+			strcpy(vetn,vet.ayn);
+			printf("Veterinario %s\n======================================\n",vetn);
+			break;
+		}
+		fread(&vet,sizeof(vet),1,Veterinarios);
+		if(feof(Veterinarios) and vet.matricula!=mat){
+			printf("La matricula ingresada es inexistente.\n");
+		}
+	}while(!feof(Veterinarios));
+	
+	fread(&turn,sizeof(turn),1,Turnos);
+	turn_aux=turn;
+	do{
+		if(turn.mat_vet==mat and turn.borrado!=true){
+			i++;
+			printf("Turno %d: %2d/%2d/%4d\n",i,turn.fec.dia,turn.fec.mes,turn.fec.anio);
+			turn_aux=turn;
 		}
 		fread(&turn,sizeof(turn),1,Turnos);
+		if(feof(Turnos) and turn_aux.mat_vet!=mat){
+			printf("No hay turnos registrados para la matricula ingresada.\n");
+		}
 	}while(!feof(Turnos));
-	system("cls");
-	printf("Fecha de turnos por matricula de Veterinarios\n=============================================\n");
-	printf("Matricula\tFecha de Turnos\n");
-	for(int ii=0;ii<i;ii++){
-		printf("%-9d",vec[ii]);
-		rewind(Turnos);
-		fread(&turn,sizeof(turn),1,Turnos);
-		do{
-			if(turn.mat_vet==vec[ii]){
-				printf("\t%2d/%2d/%d",turn.fec.dia,turn.fec.mes,turn.fec.anio);
-			}
-			fread(&turn,sizeof(turn),1,Turnos);
-		}while(!feof(Turnos));
-		printf("\n");
-	}
 	printf("\n\n");
 	system("pause");
 }
@@ -529,9 +651,12 @@ void mod1(FILE *Veterinarios,FILE *Usuarios, FILE *Turnos){
 				}
 				case 3:{
 					openFile(Turnos,"Turnos.dat");
+					openFile(Veterinarios,"Veterinarios.dat");
 					Turnos = fopen("Turnos.dat","r+b");
-					atencionPVet(Turnos);
+					Veterinarios = fopen("Veterinarios.dat","r+b");
+					atencionPVet(Turnos,Veterinarios);
 					fclose(Turnos);
+					fclose(Veterinarios);
 					break;
 				}
 				case 4:{
@@ -546,8 +671,42 @@ void mod1(FILE *Veterinarios,FILE *Usuarios, FILE *Turnos){
 	}while(O!=5);
 }
 
-void listPetVet(){
-	
+void listAtenciones(FILE *Turnos){
+	int i=0,vec[50];
+	fread(&turn,sizeof(turn),1,Turnos);
+	do{
+		for(int ii=0;ii<=i;ii++){
+			if(vec[ii]==turn.mat_vet)break;
+			if(vec[ii]!=turn.mat_vet and ii==i){
+				vec[ii]=turn.mat_vet;
+				i++;
+				break;
+			}
+		}
+		fread(&turn,sizeof(turn),1,Turnos);
+	}while(!feof(Turnos));
+	system("cls");
+	printf("Fecha de turnos por matricula de Veterinarios\n=============================================\n");
+	printf("Matricula\tFecha de Turnos\n");
+	for(int ii=0;ii<i;ii++){
+		printf("%-9d",vec[ii]);
+		rewind(Turnos);
+		int i=0;
+		fread(&turn,sizeof(turn),1,Turnos);
+		do{
+			if(turn.mat_vet==vec[ii] and turn.borrado!=true){
+				i++;
+				printf("\t%2d/%2d/%d",turn.fec.dia,turn.fec.mes,turn.fec.anio);
+			}
+			fread(&turn,sizeof(turn),1,Turnos);
+			if(feof(Turnos) and i==0){
+				printf("\tNo existen turnos registrados.");
+			}
+		}while(!feof(Turnos));
+		printf("\n");
+	}
+	printf("\n\n");
+	system("pause");
 }
 
 void mod2(bool &user_asist, FILE *Mascotas, FILE *Turnos,FILE *Veterinarios,FILE *Usuarios){
@@ -560,7 +719,7 @@ void mod2(bool &user_asist, FILE *Mascotas, FILE *Turnos,FILE *Veterinarios,FILE
 		printfn("1.- Iniciar Sesion\n");
 		printfn("2.- Registrar Mascota\n");
 		printfn("3.- Registrar Turno\n");
-		printfn("4.- Listado de atenciones a una mascota por Veterinario y fecha\n\n");
+		printfn("4.- Listado de atenciones por Veterinario y fecha\n\n");
 		printfn("5.- Cerrar la aplicacion.\n\n");
 		printfn("Ingrese una opcion: ");
 		scanf("%d",&O);
@@ -572,6 +731,12 @@ void mod2(bool &user_asist, FILE *Mascotas, FILE *Turnos,FILE *Veterinarios,FILE
 		if(H){
 			switch(O){
 				case 1:{
+					if(user_asist){
+						system("cls");
+						printf("\nYa estas logueado en el sistema!\n\n");
+						system("pause");
+						break;
+					}
 					login(Veterinarios,Usuarios,user_asist,0);
 					break;
 				}
@@ -587,13 +752,22 @@ void mod2(bool &user_asist, FILE *Mascotas, FILE *Turnos,FILE *Veterinarios,FILE
 					if(!succes(user_asist,2))break;
 					openFile(Turnos,"Turnos.dat");
 					Turnos = fopen("Turnos.dat","r+b");	
-					turnRegister(Turnos);
+					openFile(Veterinarios,"Veterinarios.dat");
+					Veterinarios = fopen("Veterinarios.dat","r+b");
+					openFile(Mascotas,"Mascotas.dat");
+					Mascotas = fopen("Mascotas.dat","r+b");		
+					turnRegister(Turnos,Veterinarios,Mascotas);
 					fclose(Turnos);
+					fclose(Veterinarios);
+					fclose(Mascotas);
 					break;
 				}
 				case 4:{
 					if(!succes(user_asist,2))break;
-					listPetVet();
+					openFile(Turnos,"Turnos.dat");
+					Turnos = fopen("Turnos.dat","r+b");
+					listAtenciones(Turnos);
+					fclose(Turnos);
 					break;
 				}
 			}
@@ -610,7 +784,7 @@ void listTurns(FILE *Turnos, FILE *Mascotas){
 	printf("=====================\n");
 	fread(&turn,sizeof(turn),1,Turnos);
 	do{
-		if((turn.mat_vet==vetAct.matricula)and(turn.fec.dia==time->tm_mday)and(turn.fec.mes==time->tm_mon+1)and(turn.fec.anio==1900+time->tm_year)){
+		if((turn.mat_vet==vetAct.matricula)and(turn.fec.dia==time->tm_mday)and(turn.fec.mes==time->tm_mon+1)and(turn.fec.anio==1900+time->tm_year)and(turn.borrado!=true)){
 			vacio = false;
 			fread(&pet,sizeof(pet),1,Mascotas);
 			do{
@@ -625,6 +799,32 @@ void listTurns(FILE *Turnos, FILE *Mascotas){
 	if(vacio)printf("No hay turnos registrados el dia de hoy.\n");
 	printf("\n\n");
 	system("pause");
+}
+
+void regEvolution(FILE *Turnos){
+	int dni;
+	system("cls");
+	printf("Ingrese el DNI del dueño de la mascota: ");
+	scanf("%d",&dni);
+	_flushall();
+	fread(&turn,sizeof(turn),1,Turnos);
+	do{
+		if(turn.mat_vet==vetAct.matricula){
+			if(dni==turn.dni_duenio and turn.borrado!=true){
+				printf("Ingrese la evolucion de la mascota en no mas de 380 caracteres: ");
+				gets(turn.det_at);
+				turn.borrado=true;
+				fseek(Turnos,-sizeof(turn),SEEK_CUR);
+				fwrite(&turn,sizeof(turn),1,Turnos);
+				break;
+			}
+		}
+		fread(&turn,sizeof(turn),1,Turnos);
+		if(feof(Turnos)and (dni!=turn.dni_duenio or turn.borrado!=true)){
+			printf("\nNo se encontro turnos con este dueño el dia de hoy.\n\n");
+			system("pause");
+		}
+	}while(!feof(Turnos));
 }
 
 void mod3(bool &user_vet,FILE *Mascotas, FILE *Turnos,FILE *Veterinarios,FILE *Usuarios){
@@ -648,6 +848,12 @@ void mod3(bool &user_vet,FILE *Mascotas, FILE *Turnos,FILE *Veterinarios,FILE *U
 		if(H){
 			switch(O){
 				case 1:{
+					if(user_vet){
+						system("cls");
+						printf("\nYa estas logueado en el sistema!\n\n");
+						system("pause");
+						break;
+					}
 					login(Veterinarios,Usuarios,user_vet,1);
 					break;
 				}
@@ -664,7 +870,10 @@ void mod3(bool &user_vet,FILE *Mascotas, FILE *Turnos,FILE *Veterinarios,FILE *U
 				}
 				case 3:{
 					if(!succes(user_vet,3))break;
-					
+					openFile(Turnos,"Turnos.dat");
+					Turnos = fopen("Turnos.dat","r+b");
+					regEvolution(Turnos);
+					fclose(Turnos);
 					break;
 				}
 			}
