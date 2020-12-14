@@ -333,8 +333,8 @@ void turnRegister(FILE *Turnos, FILE *Veterinarios,FILE *Mascotas){
 	printf("%d/%d/%d\n",turn.fec.dia,turn.fec.mes,turn.fec.anio);
 	printf("DNI del Dueño: ");
 	printf("%d\n",turn.dni_duenio);
-	printf("Detalle de Atencion: ");
-	printf("%s\n",turn.det_at);
+	//printf("Detalle de Atencion: ");
+	//printf("%s\n",turn.det_at);
 	printf("Registrar turno? (s/n): ");
 	scanf("%c",&o);
 	if(o=='s' or o=='S'){
@@ -637,7 +637,7 @@ void mod1(FILE *Veterinarios,FILE *Usuarios, FILE *Turnos){
 		printfn("2.- Registrar Usuario Asistente\n");
 		printfn("3.- Atenciones por Veterinarios\n");
 		printfn("4.- Ranking de Veterinarios por Atenciones\n\n");
-		printfn("5.- Cerrar la aplicacion.\n\n");
+		printfn("5.- Cerrar modulo.\n\n");
 		printfn("Ingrese una opcion: ");
 		scanf("%d",&O);
 		if(O>5 or O<1){
@@ -735,7 +735,7 @@ void mod2(bool &user_asist, FILE *Mascotas, FILE *Turnos,FILE *Veterinarios,FILE
 		printfn("2.- Registrar Mascota\n");
 		printfn("3.- Registrar Turno\n");
 		printfn("4.- Listado de atenciones por Veterinario y fecha\n\n");
-		printfn("5.- Cerrar la aplicacion.\n\n");
+		printfn("5.- Cerrar modulo.\n\n");
 		printfn("Ingrese una opcion: ");
 		scanf("%d",&O);
 		if(O>5 or O<1){
@@ -852,7 +852,7 @@ void mod3(bool &user_vet,FILE *Mascotas, FILE *Turnos,FILE *Veterinarios,FILE *U
 		printfn("1.- Iniciar Sesion\n");
 		printfn("2.- Visualizar Lista de Espera de Turnos de hoy (informe)\n");
 		printfn("3.- Registrar Evolucion de la Mascota\n\n");
-		printfn("4.- Cerrar la aplicacion.\n\n");
+		printfn("4.- Cerrar modulo.\n\n");
 		printfn("Ingrese una opcion: ");
 		scanf("%d",&O);
 		if(O>4 or O<1){
