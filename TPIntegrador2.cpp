@@ -239,8 +239,18 @@ bool verFec(int dia, int mes, int anio,int B){
 	tm *time = localtime(&now);
 	bool res=false;
 	if(B==1){
-		if((dia>=time->tm_mday)and(mes>=time->tm_mon+1)and(anio>=1900+time->tm_year)){
-			res=true;
+		if((dia>0 and dia<=31) and (mes>0 and mes<=12) and (anio>=1900+time->tm_year)){
+			if(anio>1900+time->tm_year){
+				res=true;
+			}else{
+				if(time->tm_mon+1==mes){
+					if(dia>=time->tm_mday){
+						res=true;
+					}
+				}else if(time->tm_mon+1<mes){
+					res=true;
+				}
+			}
 		}
 	}else{
 		if((dia<=time->tm_mday)and(mes<=time->tm_mon+1)and(anio<=1900+time->tm_year)){
@@ -565,6 +575,11 @@ void rankingVet(FILE *Turnos){
 	printf("Meses del 1 al 12, 1 = Enero y 12 = Diciembre.\n");
 	printf("Ingrese el mes para el Ranking mensual: ");
 	scanf("%d",&mes);
+	while(mes>12 and mes<1){
+		printf("Ingrese correctamente el mes!\n");
+		printf("Ingrese el mes para el Ranking mensual: ");
+		scanf("%d",&mes);
+	}
 	fread(&turn,sizeof(turn),1,Turnos);
 	do{
 		for(int ii=0;ii<=i;ii++){
